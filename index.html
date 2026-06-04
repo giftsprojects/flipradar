@@ -7,411 +7,98 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@400;600;900&display=swap');
+  :root { --bg:#0a0a0f; --surface:#111118; --card:#16161f; --border:#222232; --accent:#e83a59; --accent2:#ff6b35; --green:#00e676; --yellow:#ffd740; --text:#e8e8f0; --muted:#5a5a72; --glow:rgba(232,58,89,0.25); }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(232,58,89,0.07) 0%,transparent 60%),radial-gradient(ellipse 40% 30% at 10% 80%,rgba(255,107,53,0.05) 0%,transparent 50%);pointer-events:none;z-index:0}
+  body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .app{position:relative;z-index:1;padding:0 0 80px}
 
-  :root {
-    --bg:        #0a0a0f;
-    --surface:   #111118;
-    --card:      #16161f;
-    --border:    #222232;
-    --accent:    #e83a59;
-    --accent2:   #ff6b35;
-    --green:     #00e676;
-    --yellow:    #ffd740;
-    --text:      #e8e8f0;
-    --muted:     #5a5a72;
-    --glow:      rgba(232,58,89,0.25);
-  }
+  header{padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85)}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 0 16px var(--glow)}
+  .logo-text{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;letter-spacing:0.05em;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .pulse-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;box-shadow:0 0 8px var(--green)}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  .stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border)}
+  .stat-cell{background:var(--surface);padding:12px 8px;text-align:center}
+  .stat-val{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700}
+  .stat-val.green{color:var(--green)}.stat-val.red{color:var(--accent)}
+  .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+  .section{padding:12px 16px}
+  .section-title{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-  /* ─── Animated BG ─── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(232,58,89,0.07) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 10% 80%, rgba(255,107,53,0.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-  }
+  .filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-bottom:16px}
+  .filters::-webkit-scrollbar{display:none}
+  .chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+  .chip.active{border-color:var(--accent);color:var(--accent);background:rgba(232,58,89,0.1);box-shadow:0 0 12px rgba(232,58,89,0.2)}
 
-  /* ─── Grid texture ─── */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+  .gift-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:transform 0.15s,border-color 0.15s;animation:slideIn 0.3s ease both}
+  .gift-card:active{transform:scale(0.98)}
+  .gift-card:hover{border-color:rgba(232,58,89,0.3)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-  .app { position: relative; z-index: 1; padding: 0 0 80px; }
+  .gift-img-wrap{position:relative;width:100%;height:150px;background:var(--surface);overflow:hidden}
+  .gift-img{width:100%;height:100%;object-fit:cover;transition:transform 0.3s}
+  .gift-card:hover .gift-img{transform:scale(1.04)}
+  .gift-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:56px;background:linear-gradient(135deg,#111118,#16161f)}
 
-  /* ─── Header ─── */
-  header {
-    padding: 20px 16px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(20px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(10,10,15,0.85);
-  }
+  .platform-tag{position:absolute;top:8px;left:8px;background:rgba(10,10,15,0.88);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:10px;font-family:'Unbounded',sans-serif;color:var(--text);backdrop-filter:blur(8px)}
+  .badge-wrap{position:absolute;top:8px;right:8px}
+  .badge{padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Unbounded',sans-serif;letter-spacing:0.05em}
+  .badge-hot{background:rgba(255,215,64,0.2);color:var(--yellow);border:1px solid rgba(255,215,64,0.4)}
+  .badge-new{background:rgba(232,58,89,0.2);color:var(--accent);border:1px solid rgba(232,58,89,0.4)}
+  .badge-safe{background:rgba(0,230,118,0.15);color:var(--green);border:1px solid rgba(0,230,118,0.35)}
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .gift-body{padding:12px 14px}
+  .gift-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+  .gift-name{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.3}
+  .gift-sub{font-size:10px;color:var(--muted)}
+  .gift-price{font-family:'Unbounded',sans-serif;font-size:16px;font-weight:700;color:var(--green);text-align:right;white-space:nowrap}
+  .gift-price-label{font-size:9px;color:var(--muted);text-align:right;margin-top:2px}
 
-  .logo-icon {
-    width: 36px; height: 36px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    box-shadow: 0 0 16px var(--glow);
-  }
+  .gift-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .btn{flex:1;padding:10px 8px;border-radius:8px;border:none;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .btn-primary:hover{opacity:0.9;transform:translateY(-1px)}
+  .btn-secondary{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
 
-  .logo-text {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 15px;
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    background: linear-gradient(135deg, #fff 30%, var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  .loading{text-align:center;padding:50px 20px;color:var(--muted)}
+  .spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:12px;margin-top:8px}
 
-  .pulse-dot {
-    width: 8px; height: 8px;
-    background: var(--green);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-    box-shadow: 0 0 8px var(--green);
-  }
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty-icon{font-size:40px;margin-bottom:12px}
+  .empty-title{font-family:'Unbounded',sans-serif;font-size:14px;margin-bottom:8px;color:var(--text)}
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.5; transform: scale(0.8); }
-  }
+  /* API URL настройка */
+  .api-notice{background:rgba(232,58,89,0.08);border:1px solid rgba(232,58,89,0.2);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:11px;color:var(--muted);line-height:1.6}
+  .api-notice b{color:var(--accent)}
 
-  /* ─── Stats bar ─── */
-  .stats-bar {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: var(--border);
-    margin: 0;
-    border-bottom: 1px solid var(--border);
-  }
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:rgba(10,10,15,0.95);border-top:1px solid var(--border);backdrop-filter:blur(20px);z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+  .nav-btn{flex:1;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--muted);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;transition:color 0.2s;text-transform:uppercase;letter-spacing:0.06em}
+  .nav-btn.active{color:var(--accent)}
+  .nav-btn span{font-size:20px}
 
-  .stat-cell {
-    background: var(--surface);
-    padding: 12px 8px;
-    text-align: center;
-  }
+  .screen{display:none}.screen.active{display:block}
 
-  .stat-val {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .stat-val.green { color: var(--green); }
-  .stat-val.red   { color: var(--accent); }
-
-  .stat-label {
-    font-size: 9px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 2px;
-  }
-
-  /* ─── Section ─── */
-  .section { padding: 16px; }
-
-  .section-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* ─── Filter chips ─── */
-  .filters {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-    margin-bottom: 16px;
-  }
-  .filters::-webkit-scrollbar { display: none; }
-
-  .chip {
-    flex-shrink: 0;
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .chip.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(232,58,89,0.1);
-    box-shadow: 0 0 12px rgba(232,58,89,0.2);
-  }
-
-  /* ─── Deal cards ─── */
-  .deal-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.15s, border-color 0.15s;
-    animation: slideIn 0.3s ease both;
-  }
-
-  .deal-card:active { transform: scale(0.98); }
-
-  .deal-card:hover { border-color: rgba(232,58,89,0.3); }
-
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .deal-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: linear-gradient(180deg, var(--accent), var(--accent2));
-    border-radius: 3px 0 0 3px;
-  }
-
-  .deal-card.hot::before { background: linear-gradient(180deg, var(--yellow), #ff8c00); }
-  .deal-card.safe::before { background: linear-gradient(180deg, var(--green), #00b248); }
-
-  .deal-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-
-  .deal-name {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 3px;
-  }
-
-  .deal-sub {
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .deal-badge {
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 700;
-    font-family: 'Unbounded', sans-serif;
-    letter-spacing: 0.05em;
-  }
-
-  .badge-hot    { background: rgba(255,215,64,0.15); color: var(--yellow); border: 1px solid rgba(255,215,64,0.3); }
-  .badge-new    { background: rgba(232,58,89,0.15); color: var(--accent); border: 1px solid rgba(232,58,89,0.3); }
-  .badge-safe   { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
-
-  .deal-prices {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-
-  .price-block { text-align: center; }
-
-  .price-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
-
-  .price-val {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    margin-top: 3px;
-  }
-
-  .price-val.up   { color: var(--green); }
-  .price-val.down { color: var(--accent); }
-  .price-val.neutral { color: var(--text); }
-
-  /* ─── Empty state ─── */
-  .empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-  }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-title { font-family: 'Unbounded', sans-serif; font-size: 14px; margin-bottom: 8px; color: var(--text); }
-  .empty-sub { font-size: 12px; line-height: 1.6; }
-
-  /* ─── Bottom nav ─── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    display: flex;
-    background: rgba(10,10,15,0.95);
-    border-top: 1px solid var(--border);
-    backdrop-filter: blur(20px);
-    z-index: 100;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .nav-btn {
-    flex: 1;
-    padding: 12px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-    font-size: 9px;
-    cursor: pointer;
-    transition: color 0.2s;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn span { font-size: 20px; }
-
-  /* ─── Screen pages ─── */
-  .screen { display: none; }
-  .screen.active { display: block; }
-
-  /* ─── Scanner animation ─── */
-  .radar-wrap {
-    display: flex;
-    justify-content: center;
-    padding: 30px 0 20px;
-  }
-
-  .radar {
-    width: 120px; height: 120px;
-    position: relative;
-  }
-
-  .radar-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 1px solid rgba(232,58,89,0.3);
-  }
-  .radar-ring:nth-child(1) { inset: 0; }
-  .radar-ring:nth-child(2) { inset: 20%; }
-  .radar-ring:nth-child(3) { inset: 40%; }
-
-  .radar-sweep {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: conic-gradient(from 0deg, transparent 70%, rgba(232,58,89,0.4) 100%);
-    animation: sweep 2s linear infinite;
-  }
-
-  @keyframes sweep {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-  }
-
-  .radar-dot {
-    position: absolute;
-    width: 6px; height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 6px var(--accent);
-    animation: blink 1.5s ease infinite;
-  }
-  .radar-dot:nth-child(4) { top: 20%; left: 55%; animation-delay: 0.2s; }
-  .radar-dot:nth-child(5) { top: 60%; left: 25%; animation-delay: 0.8s; background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .radar-dot:nth-child(6) { top: 45%; left: 70%; animation-delay: 1.2s; background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
-
-  .scan-status {
-    text-align: center;
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 4px;
-  }
-
-  .scan-status b { color: var(--green); }
-
-  /* ─── Time tag ─── */
-  .time-tag {
-    font-size: 10px;
-    color: var(--muted);
-    position: absolute;
-    top: 14px;
-    right: 14px;
-  }
+  .radar-wrap{display:flex;justify-content:center;padding:20px 0 16px}
+  .radar{width:90px;height:90px;position:relative}
+  .radar-ring{position:absolute;border-radius:50%;border:1px solid rgba(232,58,89,0.3)}
+  .radar-ring:nth-child(1){inset:0}.radar-ring:nth-child(2){inset:20%}.radar-ring:nth-child(3){inset:40%}
+  .radar-sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 70%,rgba(232,58,89,0.4) 100%);animation:sweep 2s linear infinite}
+  @keyframes sweep{to{transform:rotate(360deg)}}
+  .scan-status{text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+  .scan-status b{color:var(--green)}
 </style>
 </head>
 <body>
 <div class="app">
-
-  <!-- Header -->
   <header>
     <div class="logo">
       <div class="logo-icon">📡</div>
@@ -420,202 +107,243 @@
     <div class="pulse-dot"></div>
   </header>
 
-  <!-- Stats -->
   <div class="stats-bar">
-    <div class="stat-cell">
-      <div class="stat-val green" id="stat-deals">—</div>
-      <div class="stat-label">Сделок сегодня</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val" id="stat-vol">—</div>
-      <div class="stat-label">Объём (TON)</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-val red" id="stat-hot">—</div>
-      <div class="stat-label">Горячих</div>
-    </div>
+    <div class="stat-cell"><div class="stat-val green" id="stat-deals">—</div><div class="stat-label">Найдено</div></div>
+    <div class="stat-cell"><div class="stat-val" id="stat-platforms">—</div><div class="stat-label">Платформы</div></div>
+    <div class="stat-cell"><div class="stat-val red" id="stat-updated">—</div><div class="stat-label">Обновлено</div></div>
   </div>
 
-  <!-- ══ SCREEN: RADAR ══ -->
+  <!-- RADAR SCREEN -->
   <div class="screen active" id="screen-radar">
     <div class="section">
-
-      <!-- Radar anim -->
       <div class="radar-wrap">
         <div>
           <div class="radar">
-            <div class="radar-ring"></div>
-            <div class="radar-ring"></div>
-            <div class="radar-ring"></div>
+            <div class="radar-ring"></div><div class="radar-ring"></div><div class="radar-ring"></div>
             <div class="radar-sweep"></div>
-            <div class="radar-dot"></div>
-            <div class="radar-dot"></div>
-            <div class="radar-dot"></div>
           </div>
-          <div class="scan-status" style="margin-top:12px"><b>СКАНИРОВАНИЕ</b> АКТИВНО</div>
-          <div class="scan-status">Подарки Telegram · real-time</div>
+          <div class="scan-status"><b>СКАНИРОВАНИЕ</b> АКТИВНО</div>
         </div>
       </div>
 
-      <!-- Filters -->
       <div class="filters">
-        <div class="chip active" onclick="filterDeals('all', this)">Все</div>
-        <div class="chip" onclick="filterDeals('hot', this)">🔥 Горячие</div>
-        <div class="chip" onclick="filterDeals('new', this)">🆕 Новые</div>
-        <div class="chip" onclick="filterDeals('safe', this)">✅ Надёжные</div>
+        <div class="chip active" onclick="filterDeals('all',this)">Все</div>
+        <div class="chip" onclick="filterDeals('fragment',this)">💎 Fragment</div>
+        <div class="chip" onclick="filterDeals('mrkt',this)">🏪 MRKT</div>
+        <div class="chip" onclick="filterDeals('tonnel',this)">🚇 Tonnel</div>
       </div>
 
-      <div class="section-title">Сигналы</div>
-
+      <div class="section-title">Подарки</div>
       <div id="deals-list">
-        <!-- Заполняется JS -->
+        <div class="loading"><div class="spinner"></div><div class="loading-text">Загружаем подарки с Fragment...</div></div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SCREEN: FILTERS ══ -->
-  <div class="screen" id="screen-filters">
+  <!-- SETTINGS SCREEN -->
+  <div class="screen" id="screen-settings">
     <div class="section">
-      <div class="section-title">Настройки фильтров</div>
-      <div style="color:var(--muted);font-size:12px;line-height:1.8;padding:20px;text-align:center;border:1px dashed var(--border);border-radius:12px;">
-        🚧 Раздел в разработке.<br>Скоро здесь появятся фильтры<br>по цене, типу, профиту.
+      <div class="section-title">Настройки API</div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'Unbounded',sans-serif;">URL СЕРВЕРА</div>
+        <input id="api-url-input" type="text" placeholder="https://xxxx.ngrok.io" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none">
+        <button onclick="saveApiUrl()" style="margin-top:10px;width:100%;padding:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:#fff;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
+        <div style="margin-top:10px;font-size:10px;color:var(--muted);line-height:1.6">
+          Введи ngrok URL после запуска бота.<br>
+          <b style="color:var(--accent)">Как получить:</b> запусти <code style="color:var(--green)">ngrok http 8080</code> и скопируй HTTPS ссылку.
+        </div>
+      </div>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'Unbounded',sans-serif;">ТЕКУЩИЙ URL</div>
+        <div id="current-api-url" style="font-size:11px;color:var(--green);word-break:break-all">Не задан</div>
       </div>
     </div>
   </div>
 
-  <!-- ══ SCREEN: PROFILE ══ -->
+  <!-- PROFILE SCREEN -->
   <div class="screen" id="screen-profile">
     <div class="section">
       <div class="section-title">Профиль</div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:12px;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin-bottom:12px">
         <div style="font-size:40px;margin-bottom:8px">👤</div>
         <div style="font-family:'Unbounded',sans-serif;font-size:14px;margin-bottom:4px" id="profile-name">—</div>
         <div style="font-size:11px;color:var(--muted)" id="profile-id">ID: —</div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-          <span style="font-size:11px;color:var(--green);">✅ Доступ активен</span>
-        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><span style="font-size:11px;color:var(--green)">✅ Доступ активен</span></div>
       </div>
-
-      <!-- Заглушка под подписку -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;opacity:0.5">
-        <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:var(--muted);margin-bottom:8px;">ПОДПИСКА</div>
-        <div style="font-size:12px;color:var(--muted);">💎 PRO-план · Скоро</div>
-        <!-- Здесь будут кнопки CryptoBot / Telegram Stars -->
+        <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:var(--muted);margin-bottom:8px">ПОДПИСКА</div>
+        <div style="font-size:12px;color:var(--muted)">💎 PRO-план · Скоро</div>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- Bottom Nav -->
 <nav class="bottom-nav">
-  <button class="nav-btn active" onclick="showScreen('radar', this)">
-    <span>📡</span>Радар
-  </button>
-  <button class="nav-btn" onclick="showScreen('filters', this)">
-    <span>⚙️</span>Фильтры
-  </button>
-  <button class="nav-btn" onclick="showScreen('profile', this)">
-    <span>👤</span>Профиль
-  </button>
+  <button class="nav-btn active" onclick="showScreen('radar',this)"><span>📡</span>Радар</button>
+  <button class="nav-btn" onclick="showScreen('settings',this)"><span>⚙️</span>Настройки</button>
+  <button class="nav-btn" onclick="showScreen('profile',this)"><span>👤</span>Профиль</button>
 </nav>
 
 <script>
 const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  // Передать user данные боту при открытии
-  const user = tg.initDataUnsafe?.user;
-  if (user) {
-    document.getElementById('profile-name').textContent = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-    document.getElementById('profile-id').textContent = 'ID: ' + user.id;
-  }
+if (tg) { tg.ready(); tg.expand(); }
+
+const user = tg?.initDataUnsafe?.user;
+if (user) {
+  document.getElementById('profile-name').textContent = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+  document.getElementById('profile-id').textContent = 'ID: ' + user.id;
 }
 
-// ─── Демо-данные (замени на реальный API) ───────────────────────────────────
-const DEMO_DEALS = [
-  {
-    id: 1, type: 'hot',
-    name: 'Eternal Rose #4821',
-    sub: 'Листинг 2 мин назад',
-    badge: 'hot', badgeText: '🔥 HOT',
-    floor: '12.5', market: '9.8', profit: '+27%',
-    time: '00:02'
-  },
-  {
-    id: 2, type: 'new',
-    name: 'Lol Pop #1337',
-    sub: 'Листинг 8 мин назад',
-    badge: 'new', badgeText: '🆕 NEW',
-    floor: '4.2', market: '3.6', profit: '+16%',
-    time: '00:08'
-  },
-  {
-    id: 3, type: 'safe',
-    name: 'Plush Pepe #782',
-    sub: 'Листинг 15 мин назад',
-    badge: 'safe', badgeText: '✅ SAFE',
-    floor: '22.0', market: '19.5', profit: '+12%',
-    time: '00:15'
-  },
-  {
-    id: 4, type: 'new',
-    name: 'Dark Wizard #99',
-    sub: 'Листинг 22 мин назад',
-    badge: 'new', badgeText: '🆕 NEW',
-    floor: '7.8', market: '6.9', profit: '+13%',
-    time: '00:22'
-  },
-];
+// ─── API URL — хранится в localStorage ───────────────────────────────────────
+function getApiUrl() {
+  return localStorage.getItem('flip_api_url') || '';
+}
 
-let currentFilter = 'all';
+function saveApiUrl() {
+  const val = document.getElementById('api-url-input').value.trim().replace(/\/$/, '');
+  if (!val) return;
+  localStorage.setItem('flip_api_url', val);
+  document.getElementById('current-api-url').textContent = val + '/api/gifts';
+  if (tg) tg.showAlert('✅ URL сохранён! Возвращайся на радар.');
+  loadDeals();
+}
 
-function renderDeals(deals) {
-  const container = document.getElementById('deals-list');
-  if (!deals.length) {
-    container.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">📡</div>
-        <div class="empty-title">Нет сигналов</div>
-        <div class="empty-sub">Радар сканирует рынок.<br>Сигналы появятся здесь.</div>
-      </div>`;
+// Показываем текущий URL в настройках
+const saved = getApiUrl();
+if (saved) {
+  document.getElementById('api-url-input').value = saved;
+  document.getElementById('current-api-url').textContent = saved + '/api/gifts';
+}
+
+let allDeals = [];
+
+// ─── Загрузка ─────────────────────────────────────────────────────────────────
+async function loadDeals() {
+  const apiUrl = getApiUrl();
+
+  if (!apiUrl) {
+    // Нет URL — показываем демо и подсказку
+    allDeals = getDemoDeals();
+    renderDeals(allDeals);
+    updateStats(allDeals);
+
+    const list = document.getElementById('deals-list');
+    list.insertAdjacentHTML('afterbegin', `
+      <div class="api-notice" style="margin-bottom:12px">
+        <b>⚙️ Настрой API сервер</b><br>
+        Перейди в <b>Настройки</b> и введи ngrok URL.<br>
+        Сейчас показаны демо-данные.
+      </div>
+    `);
+    updateTime();
     return;
   }
 
-  container.innerHTML = deals.map((d, i) => `
-    <div class="deal-card ${d.type}" style="animation-delay:${i * 0.07}s">
-      <div class="time-tag">${d.time}</div>
-      <div class="deal-top">
-        <div>
-          <div class="deal-name">${d.name}</div>
-          <div class="deal-sub">${d.sub}</div>
-        </div>
-        <div class="deal-badge badge-${d.badge}">${d.badgeText}</div>
+  try {
+    const resp = await fetch(apiUrl + '/api/gifts', {
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    allDeals = await resp.json();
+    renderDeals(allDeals);
+    updateStats(allDeals);
+    updateTime();
+  } catch(e) {
+    console.error('API error:', e);
+    allDeals = getDemoDeals();
+    renderDeals(allDeals);
+    updateStats(allDeals);
+
+    const list = document.getElementById('deals-list');
+    list.insertAdjacentHTML('afterbegin', `
+      <div class="api-notice">
+        <b>⚠️ Сервер недоступен</b><br>
+        Убедись что бот запущен и ngrok работает.<br>
+        Показаны демо-данные.
       </div>
-      <div class="deal-prices">
-        <div class="price-block">
-          <div class="price-label">Флор</div>
-          <div class="price-val neutral">${d.floor}</div>
+    `);
+    updateTime();
+  }
+}
+
+function updateTime() {
+  const now = new Date();
+  document.getElementById('stat-updated').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' +
+    now.getMinutes().toString().padStart(2,'0');
+}
+
+function updateStats(deals) {
+  document.getElementById('stat-deals').textContent = deals.length;
+  const platforms = [...new Set(deals.map(d => d.platform).filter(Boolean))];
+  document.getElementById('stat-platforms').textContent = platforms.length || 1;
+}
+
+// ─── Рендер ───────────────────────────────────────────────────────────────────
+function renderDeals(deals) {
+  const container = document.getElementById('deals-list');
+  if (!deals.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">Нет подарков</div><div style="font-size:12px">Радар сканирует рынок...</div></div>`;
+    return;
+  }
+
+  const badges = { hot:'🔥 HOT', new:'🆕 NEW', safe:'✅ SAFE' };
+
+  container.innerHTML = deals.map((d, i) => {
+    const badge = d.badge || 'new';
+    const imgHtml = d.img_url
+      ? `<img class="gift-img" src="${escHtml(d.img_url)}" alt="${escHtml(d.name)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'gift-img-placeholder\\'>🎁</div>'">`
+      : `<div class="gift-img-placeholder">🎁</div>`;
+
+    return `
+    <div class="gift-card" style="animation-delay:${i*0.06}s">
+      <div class="gift-img-wrap">
+        ${imgHtml}
+        <div class="platform-tag">${escHtml(d.platform_icon||'💎')} ${escHtml(d.platform||'Fragment')}</div>
+        <div class="badge-wrap"><span class="badge badge-${badge}">${badges[badge]||'🆕 NEW'}</span></div>
+      </div>
+      <div class="gift-body">
+        <div class="gift-top">
+          <div style="flex:1;min-width:0;margin-right:10px">
+            <div class="gift-name">${escHtml(d.name)}</div>
+            <div class="gift-sub">${escHtml(d.slug||'')}</div>
+          </div>
+          <div style="flex-shrink:0">
+            <div class="gift-price">${escHtml(d.price||'—')}</div>
+            <div class="gift-price-label">цена</div>
+          </div>
         </div>
-        <div class="price-block">
-          <div class="price-label">Рынок</div>
-          <div class="price-val neutral">${d.market}</div>
-        </div>
-        <div class="price-block">
-          <div class="price-label">Профит</div>
-          <div class="price-val up">${d.profit}</div>
+        <div class="gift-actions">
+          <button class="btn btn-primary" onclick="openUrl('${escAttr(d.url)}')">🔗 Открыть</button>
+          <button class="btn btn-secondary" onclick="copyLink('${escAttr(d.url)}')">📋 Копировать</button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+function openUrl(url) {
+  if (tg) tg.openLink(url);
+  else window.open(url, '_blank');
+}
+
+function copyLink(url) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      if (tg) tg.showAlert('✅ Ссылка скопирована!');
+      else alert('Скопировано!');
+    });
+  } else {
+    if (tg) tg.showAlert(url);
+    else prompt('Ссылка:', url);
+  }
 }
 
 function filterDeals(type, el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  currentFilter = type;
-  const filtered = type === 'all' ? DEMO_DEALS : DEMO_DEALS.filter(d => d.type === type);
+  const filtered = type === 'all' ? allDeals : allDeals.filter(d => (d.platform||'').toLowerCase().includes(type));
   renderDeals(filtered);
 }
 
@@ -626,16 +354,19 @@ function showScreen(name, btn) {
   btn.classList.add('active');
 }
 
-// Инициализация
-renderDeals(DEMO_DEALS);
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s||'').replace(/'/g,"\\'"); }
 
-// Обновление статов
-document.getElementById('stat-deals').textContent = DEMO_DEALS.length;
-document.getElementById('stat-vol').textContent = '1.2K';
-document.getElementById('stat-hot').textContent = DEMO_DEALS.filter(d => d.type === 'hot').length;
+function getDemoDeals() {
+  return [
+    {name:'Eternal Rose #4821',slug:'eternal-rose-4821',url:'https://fragment.com/gifts',price:'12.5 TON',img_url:'',platform:'Fragment',platform_icon:'💎',badge:'hot'},
+    {name:'Lol Pop #1337',slug:'lol-pop-1337',url:'https://fragment.com/gifts',price:'4.2 TON',img_url:'',platform:'Fragment',platform_icon:'💎',badge:'new'},
+    {name:'Plush Pepe #782',slug:'plush-pepe-782',url:'https://fragment.com/gifts',price:'22.0 TON',img_url:'',platform:'Fragment',platform_icon:'💎',badge:'safe'},
+  ];
+}
 
-// Симуляция новых сделок каждые 30 сек (замени на WebSocket / polling)
-// setInterval(() => { /* fetch('/api/deals').then(...) */ }, 30000);
+loadDeals();
+setInterval(loadDeals, 30000);
 </script>
 </body>
 </html>
